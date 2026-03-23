@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# YOLOv8 model weights (downloaded automatically)
+*.pt
+
+# Logs (generated at runtime)
+logs/*.csv
+
+# Media files (user-provided, potentially large)
+media/*.mp4
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store

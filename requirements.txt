@@ -1,0 +1,26 @@
+# ──────────────────────────────────────────────────────────────
+# FocusTracker-AI  —  Requirements
+# ──────────────────────────────────────────────────────────────
+# IMPORTANT — GPU Setup (NVIDIA CUDA)
+# --------------------------------------------------
+# For GPU acceleration, install PyTorch with CUDA *before* this file:
+#
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+# For CPU-only (works fine with YOLOv8n):
+#
+#   pip install torch torchvision torchaudio
+#
+# Then install the rest:
+#
+#   pip install -r requirements.txt
+# ──────────────────────────────────────────────────────────────
+
+# YOLOv8 object detection
+ultralytics>=8.2.0
+
+# Computer vision (ensure non-headless version for DEMO mode)
+opencv-python>=4.9.0
+
+# Video playback (full-screen, always-on-top intervention)
+python-vlc>=3.0.18
