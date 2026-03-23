@@ -4,7 +4,6 @@ Logs every phone-detection event and produces end-of-day summaries.
 """
 
 import csv
-import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -65,7 +64,6 @@ def print_summary() -> None:
     # ── Longest focus streak ──────────────────────────────────
     # A "focus streak" is the gap between consecutive detection events,
     # or from start-of-log to first detection, or last removal to now.
-    all_times = sorted(detections + removals)
     longest_focus = timedelta(0)
     if removals:
         # Gaps between a removal and the next detection

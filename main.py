@@ -9,8 +9,8 @@ Usage:
     python main.py --no-pomodoro            # Disable Pomodoro timer
     python main.py --summary                # Print today's focus summary and exit
 
-Author : github.com/YOUR_USERNAME
-License: MIT
+Author : github.com/MomenAlbawaridGit
+License: Unlicense (Public Domain)
 """
 
 import argparse
@@ -126,6 +126,11 @@ def main() -> None:
 
             # Phone is "logically visible" if seen within the cooldown window
             phone_visible = (now - last_seen_time) < config.COOLDOWN_SECONDS if last_seen_time > 0 else False
+
+            # ── Sync with actual intervention state ──────────
+            # If the VLC thread crashed or finished, reset our local flag
+            if intervention_active and not intervention.is_active:
+                intervention_active = False
 
             # ── State transitions ─────────────────────────────
             if phone_visible and not intervention_active:

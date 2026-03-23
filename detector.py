@@ -77,7 +77,6 @@ class PhoneDetector:
         results = self.model.predict(
             small,
             conf=config.CONFIDENCE_THRESHOLD,
-            device=self.device,
             classes=[config.PHONE_CLASS_ID],
             verbose=False,
         )

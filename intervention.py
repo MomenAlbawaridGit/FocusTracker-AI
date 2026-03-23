@@ -6,6 +6,7 @@ Uses python-vlc for playback and pywin32 for window management.
 """
 
 import ctypes
+import ctypes.wintypes
 import random
 import threading
 import time
@@ -74,6 +75,8 @@ class InterventionPlayer:
         Stop the intervention (called when the phone leaves the frame).
         """
         with self._lock:
+            if not self._active:
+                return
             self._should_play = False
 
     # ── Internals ─────────────────────────────────────────────
@@ -92,51 +95,57 @@ class InterventionPlayer:
         Background thread: start VLC, force the window on top,
         loop the video, and tear down when dismissed.
         """
-        video = self._pick_video()
-        if video is None:
+        try:
+            video = self._pick_video()
+            if video is None:
+                return
+
+            print(f"[Intervention] Playing: {video.name}")
+
+            # ── Create VLC player ─────────────────────────────────
+            self._vlc_instance = vlc.Instance("--no-video-title-show",
+                                              "--no-osd",
+                                              "--input-repeat=999999")
+            self._player = self._vlc_instance.media_player_new()
+            media = self._vlc_instance.media_new(str(video))
+            media.add_option("input-repeat=999999")  # Loop effectively forever
+            self._player.set_media(media)
+            self._player.set_fullscreen(True)
+            self._player.play()
+
+            # Give VLC a moment to create its window
+            time.sleep(1.5)
+
+            # ── Force always-on-top via Win32 ─────────────────────
+            self._force_topmost()
+
+            # ── Keep enforcing topmost while phone is visible ─────
+            while True:
+                with self._lock:
+                    if not self._should_play:
+                        break
+                # Re-enforce topmost every 500 ms in case user tries to Alt-Tab
+                self._force_topmost()
+                time.sleep(0.5)
+
+            # ── Tear down ─────────────────────────────────────────
+            if self._player:
+                self._player.stop()
+                self._player.release()
+            if self._vlc_instance:
+                self._vlc_instance.release()
+            print("[Intervention] Dismissed — phone removed from frame.")
+
+        except Exception as e:
+            print(f"[Intervention] Error during playback: {e}")
+
+        finally:
+            self._player = None
+            self._vlc_instance = None
+            self._vlc_hwnd = None
             with self._lock:
                 self._active = False
-            return
-
-        print(f"[Intervention] Playing: {video.name}")
-
-        # ── Create VLC player ─────────────────────────────────
-        self._vlc_instance = vlc.Instance("--no-video-title-show",
-                                          "--no-osd",
-                                          "--input-repeat=999999")
-        self._player = self._vlc_instance.media_player_new()
-        media = self._vlc_instance.media_new(str(video))
-        media.add_option("input-repeat=999999")  # Loop effectively forever
-        self._player.set_media(media)
-        self._player.set_fullscreen(True)
-        self._player.play()
-
-        # Give VLC a moment to create its window
-        time.sleep(1.5)
-
-        # ── Force always-on-top via Win32 ─────────────────────
-        self._force_topmost()
-
-        # ── Keep enforcing topmost while phone is visible ─────
-        while True:
-            with self._lock:
-                if not self._should_play:
-                    break
-            # Re-enforce topmost every 500 ms in case user tries to Alt-Tab
-            self._force_topmost()
-            time.sleep(0.5)
-
-        # ── Tear down ─────────────────────────────────────────
-        self._player.stop()
-        self._player.release()
-        self._vlc_instance.release()
-        self._player = None
-        self._vlc_instance = None
-        self._vlc_hwnd = None
-        print("[Intervention] Dismissed — phone removed from frame.")
-
-        with self._lock:
-            self._active = False
+                self._should_play = False
 
     def _force_topmost(self) -> None:
         """
@@ -155,8 +164,10 @@ class InterventionPlayer:
             return
 
         # ── Enumerate windows to find VLC ─────────────────────
+        # HWND and LPARAM are pointer-sized (8 bytes on 64-bit Windows).
+        # Using c_int would truncate the handle and crash.
         WNDENUMPROC = ctypes.WINFUNCTYPE(
-            ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)
+            ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM
         )
         target_hwnd = None
 

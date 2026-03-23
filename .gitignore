@@ -17,9 +17,11 @@ env/
 
 # Logs (generated at runtime)
 logs/*.csv
+!logs/.gitkeep
 
 # Media files (user-provided, potentially large)
 media/*.mp4
+!media/.gitkeep
 
 # IDE
 .vscode/
